@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memo Test Mundial - BAPA</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        h1 { margin-bottom: 20px; font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .tablero { display: grid; grid-template-columns: repeat(4, 150px); gap: 15px; background-color: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .carta { width: 150px; height: 150px; cursor: pointer; border-radius: 8px; transition: transform 0.3s; transform-style: preserve-3d; position: relative; }
+        .carta:active { transform: scale(0.95); }
+        .frente, .atras { width: 100%; height: 100%; position: absolute; top: 0; left: 0; backface-visibility: hidden; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 2px solid #fff; object-fit: cover; }
+        .frente { transform: rotateY(180deg); }
+        .atras { background-color: #f1c40f; color: #fff; }
+        .carta.volteada { transform: rotateY(180deg); }
+        #info-game { margin-top: 25px; font-size: 1.5rem; display: flex; gap: 30px; }
+        .message-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; text-align: center; }
+        .message-box h2 { font-size: 2.5rem; margin-top: 0; }
+        .message-box p { font-size: 1.2rem; }
+        .message-box button { margin-top: 20px; padding: 10px 20px; font-size: 1rem; cursor: pointer; background: #e67e22; border: none; color: white; border-radius: 5px; }
+        .message-box button:hover { background: #d35400; }
+    </style>
+</head>
+<body>
+    <h1>Memo Test Mundial - BAPA</h1>
+    <div class="tablero" id="game-board">
+        </div>
+    <div id="info-game">
+        <div id="intentos">Intentos: 0 / 15</div>
+        <div id="pares">Pares: 0</div>
+    </div>
+    <div class="message-box" id="message-end">
+        <h2 id="end-title">¡Final!</h2>
+        <p id="end-msg">¡Juego terminado!</p>
+        <button onclick="reiniciarJuego()">Volver a Jugar</button>
+    </div>
+    <script>
+        const board = document.getElementById('game-board');
+        const attemptsText = document.getElementById('intentos');
+        const pairsText = document.getElementById('pares');
+        const messageEnd = document.getElementById('message-end');
+        const endTitle = document.getElementById('end-title');
+        const endMsg = document.getElementById('end-msg');
+
+        let attempts = 0;
+        let pairsFound = 0;
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        const totalPairs = 8;
+        const maxAttempts = 15;
+
+        // Lista de imágenes (reemplaza por tus rutas reales)
+        const flags = ['bandera1.png','bandera1.png','bandera2.png','bandera2.png','bandera3.png','bandera3.png','bandera4.png','bandera4.png','bandera5.png','bandera5.png','bandera6.png','bandera6.png','bandera7.png','bandera7.png','bandera8.png','bandera8.png'];
+        flags.sort(() => Math.random() - 0.5); // Mezclar
+
+        function createCard(img) {
+            const card = document.createElement('div');
+            card.classList.add('carta');
+            card.dataset.flag = img;
+
+            const frontImg = document.createElement('img');
+            frontImg.classList.add('frente');
+            frontImg.src = img;
+
+            const backImg = document.createElement('img');
+            backImg.classList.add('atras');
+            backImg.src = 'reverso.png';
+
+            card.appendChild(frontImg);
+            card.appendChild(backImg);
+            card.addEventListener('click', flipCard);
+            board.appendChild(card);
+        }
+
+        flags.forEach(createCard); // Generar tablero
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            this.classList.add('volteada');
+
+            if (!firstCard) {
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            attempts++;
+            attemptsText.innerText = `Intentos: ${attempts} / ${maxAttempts}`;
+
+            checkMatch();
+        }
+
+        function checkMatch() {
+            let isMatch = firstCard.dataset.flag === secondCard.dataset.flag;
+            isMatch ? disableCards() : unflipCards();
+        }
+
+        function disableCards() {
+            pairsFound++;
+            pairsText.innerText = `Pares: ${pairsFound}`;
+            resetBoard();
+            if (pairsFound === totalPairs) setTimeout(() => endGame(true), 500);
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('volteada');
+                secondCard.classList.remove('volteada');
+                resetBoard();
+                if (attempts >= maxAttempts) endGame(false);
+            }, 1000);
+        }
+
+        function resetBoard() {
+            [firstCard, secondCard] = [null, null];
+            lockBoard = false;
+        }
+
+        function endGame(won) {
+            lockBoard = true;
+            if (won) {
+                endTitle.innerText = "¡Campeones!";
+                endMsg.innerText = `Completaste el juego en ${attempts} intentos.`;
+            } else {
+                endTitle.innerText = "¡Game Over!";
+                endMsg.innerText = "Se te acabaron los intentos. ¡Vuelve a intentarlo!";
+            }
+            messageEnd.style.display = 'block';
+        }
+
+        function reiniciarJuego() {
+            location.reload(); // Recarga la página para mezclar de nuevo
+        }
+    </script>
+</body>
+</html>
