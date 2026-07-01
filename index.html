@@ -5,446 +5,209 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memo Test Mundial - B.A.P.A.</title>
   <style>
-    :root {
-      --azul: #2c3e50;
-      --dorado: #f1c40f;
-      --naranja: #e67e22;
-      --blanco: #ffffff;
-    }
-
-    * { box-sizing: border-box; }
-
+    :root { --azul:#2c3e50; --dorado:#f1c40f; --naranja:#e67e22; --blanco:#fff; }
+    * { box-sizing:border-box; }
     body {
-      min-height: 100vh;
-      margin: 0;
-      padding: 24px;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      color: var(--blanco);
-      background: var(--azul);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      min-height:100vh; margin:0; padding:24px; font-family:Arial,sans-serif; text-align:center;
+      color:var(--blanco); background:var(--azul); display:flex; flex-direction:column; align-items:center;
     }
-
-    h1 {
-      margin: 0 0 16px;
-      font-size: clamp(2rem, 5vw, 3rem);
-      text-shadow: 2px 2px 4px rgba(0,0,0,.5);
+    h1 { margin:0 0 12px; font-size:clamp(2rem,5vw,3rem); text-shadow:2px 2px 4px rgba(0,0,0,.5); }
+    .subtitulo { margin:0 0 16px; max-width:650px; line-height:1.4; opacity:.92; }
+    .panel, .resultado-ronda {
+      width:min(100%,620px); padding:14px; margin-bottom:16px; border-radius:12px;
+      background:rgba(255,255,255,.12); box-shadow:0 4px 15px rgba(0,0,0,.25);
     }
-
-    .panel-equipo, .ranking {
-      width: min(100%, 500px);
-      padding: 14px;
-      margin-bottom: 16px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.12);
-      box-shadow: 0 4px 15px rgba(0,0,0,.25);
-    }
-
-    .panel-equipo {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    input, button {
-      font: inherit;
-      border-radius: 7px;
-      border: none;
-    }
-
-    input {
-      width: min(100%, 230px);
-      padding: 10px 12px;
-    }
-
-    button {
-      padding: 10px 16px;
-      cursor: pointer;
-      color: white;
-      background: var(--naranja);
-      transition: background .2s, transform .2s;
-    }
-
-    button:hover { background: #d35400; }
-    button:active { transform: scale(.97); }
-    button:disabled { cursor: not-allowed; opacity: .55; }
-
+    .panel { display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; }
+    button { font:inherit; border:0; border-radius:7px; padding:10px 16px; cursor:pointer; color:#fff; background:var(--naranja); transition:.2s; }
+    button:hover { background:#d35400; }
+    button:active { transform:scale(.97); }
+    button:disabled { cursor:not-allowed; opacity:.55; }
     .tablero {
-      display: grid;
-      grid-template-columns: repeat(3, min(120px, 27vw));
-      gap: 12px;
-      padding: 16px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.10);
-      box-shadow: 0 4px 15px rgba(0,0,0,.3);
+      display:grid; grid-template-columns:repeat(4, min(135px, 20vw)); gap:12px; padding:16px;
+      border-radius:12px; background:rgba(255,255,255,.10); box-shadow:0 4px 15px rgba(0,0,0,.3);
     }
-
-    .carta, .timer-cell {
-      width: min(120px, 27vw);
-      aspect-ratio: 1;
-      border-radius: 9px;
-    }
-
-    .carta {
-      position: relative;
-      cursor: pointer;
-      transform-style: preserve-3d;
-      transition: transform .3s;
-    }
-
-    .carta:active { transform: scale(.95); }
-    .carta.volteada, .carta.encontrada { transform: rotateY(180deg); }
-    .carta.encontrada { cursor: default; }
-
+    .carta { width:min(135px,20vw); aspect-ratio:1; position:relative; cursor:pointer; transform-style:preserve-3d; transition:transform .3s; }
+    .carta:active { transform:scale(.95); }
+    .carta.volteada, .carta.encontrada { transform:rotateY(180deg); }
+    .carta.encontrada { cursor:default; }
     .frente, .atras {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      inset: 0;
-      border: 2px solid var(--blanco);
-      border-radius: 9px;
-      object-fit: cover;
-      box-shadow: 0 2px 5px rgba(0,0,0,.25);
-      backface-visibility: hidden;
+      position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border:2px solid var(--blanco);
+      border-radius:9px; box-shadow:0 2px 5px rgba(0,0,0,.25); backface-visibility:hidden;
     }
-
-    .frente { transform: rotateY(180deg); }
-    .atras { background: var(--dorado); }
-
-    .timer-cell {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 8px;
-      color: #2c3e50;
-      background: var(--dorado);
-      border: 2px solid var(--blanco);
-      box-shadow: 0 2px 5px rgba(0,0,0,.25);
-      font-weight: bold;
-    }
-
-    .timer-cell span:first-child { font-size: .78rem; text-transform: uppercase; }
-    #cronometro { margin-top: 5px; font-size: clamp(1.35rem, 5vw, 2rem); }
-
-    #info-game {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 14px 28px;
-      margin: 18px 0 12px;
-      font-size: 1.15rem;
-    }
-
-    #info-game div { font-weight: bold; }
-
-    #finalizar-turno { margin-bottom: 18px; }
-
-    .ranking h2 { margin: 0 0 10px; font-size: 1.2rem; }
-    .ranking table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-    .ranking th, .ranking td { padding: 7px 5px; border-bottom: 1px solid rgba(255,255,255,.22); }
-    .ranking th { color: #f9dc4a; }
-    .ranking tbody tr:last-child td { border-bottom: 0; }
-    .ranking-vacio { margin: 0; opacity: .8; }
-
+    .frente { transform:rotateY(180deg); }
+    .atras { background:var(--dorado); }
+    #info-game { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 24px; margin:18px 0 12px; font-size:1.12rem; }
+    #info-game div { font-weight:bold; }
+    .resultado-ronda { display:none; }
+    .resultado-ronda h2 { margin:0 0 10px; font-size:1.35rem; }
+    .resultado-ronda table { width:100%; border-collapse:collapse; }
+    .resultado-ronda th, .resultado-ronda td { padding:8px 5px; border-bottom:1px solid rgba(255,255,255,.22); }
+    .resultado-ronda tr:last-child td { border-bottom:0; }
     .message-box {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      top: 50%;
-      left: 50%;
-      width: min(90%, 430px);
-      transform: translate(-50%, -50%);
-      padding: 30px;
-      border-radius: 15px;
-      color: #1f2d3a;
-      background: white;
-      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+      display:none; position:fixed; z-index:1000; top:50%; left:50%; width:min(90%,460px); transform:translate(-50%,-50%);
+      padding:30px; border-radius:15px; color:#1f2d3a; background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.5);
     }
-
-    .message-box h2 { margin: 0 0 10px; font-size: 2rem; }
-    .message-box p { margin: 0; line-height: 1.5; }
-    .message-box button { margin-top: 20px; }
-
-    @media (max-width: 420px) {
-      body { padding: 15px; }
-      .tablero { gap: 8px; padding: 10px; }
-      #info-game { font-size: 1rem; }
-    }
+    .message-box h2 { margin:0 0 10px; font-size:2rem; }
+    .message-box p { margin:0; line-height:1.5; }
+    .message-box button { margin-top:20px; }
+    @media(max-width:520px) { body{padding:15px;} .tablero{gap:7px;padding:10px;} #info-game{font-size:1rem;} }
   </style>
 </head>
 <body>
   <h1>Memo Test Mundial - B.A.P.A.</h1>
+  <p class="subtitulo">Ronda de dos equipos: gana quien consiga más aciertos; si empatan, gana quien lo logra en menor tiempo.</p>
 
-  <div class="panel-equipo">
-    <label for="nombre-equipo">Equipo:</label>
-    <input id="nombre-equipo" type="text" maxlength="30" placeholder="Ej.: Los Campeones">
-    <button id="iniciar-juego" type="button">Iniciar turno</button>
+  <div class="panel">
+    <strong id="estado-ronda">Preparados para comenzar la ronda.</strong>
+    <button id="boton-principal" type="button">Comenzar: Equipo 1</button>
   </div>
 
   <div class="tablero" id="game-board" aria-label="Tablero del juego"></div>
 
   <div id="info-game">
+    <div id="equipo-actual">Turno: —</div>
+    <div id="cronometro">Tiempo: 00:00</div>
     <div id="intentos">Intentos: 0</div>
-    <div id="pares">Aciertos: 0 / 4</div>
-    <div id="equipo-actual">Equipo: —</div>
+    <div id="pares">Aciertos: 0 / 8</div>
   </div>
 
-  <button id="finalizar-turno" type="button" disabled>Finalizar turno</button>
-
-  <section class="ranking" aria-live="polite">
-    <h2>Tabla de equipos</h2>
-    <div id="tabla-resultados"><p class="ranking-vacio">Todavía no hay resultados registrados.</p></div>
+  <section class="resultado-ronda" id="resultado-ronda" aria-live="polite">
+    <h2>Resultado de la ronda</h2>
+    <table>
+      <thead><tr><th>Equipo</th><th>Aciertos</th><th>Tiempo</th></tr></thead>
+      <tbody id="tabla-ronda"></tbody>
+    </table>
   </section>
 
   <div class="message-box" id="message-end" role="dialog" aria-modal="true">
-    <h2 id="end-title">¡Turno finalizado!</h2>
+    <h2 id="end-title"></h2>
     <p id="end-msg"></p>
-    <button type="button" onclick="nuevoEquipo()">Juega otro equipo</button>
+    <button id="modal-button" type="button"></button>
   </div>
 
   <script>
     const board = document.getElementById('game-board');
+    const principalButton = document.getElementById('boton-principal');
+    const roundStatus = document.getElementById('estado-ronda');
+    const teamText = document.getElementById('equipo-actual');
+    const timerText = document.getElementById('cronometro');
     const attemptsText = document.getElementById('intentos');
     const pairsText = document.getElementById('pares');
-    const teamText = document.getElementById('equipo-actual');
-    const teamInput = document.getElementById('nombre-equipo');
-    const startButton = document.getElementById('iniciar-juego');
-    const finishButton = document.getElementById('finalizar-turno');
-    const resultsContainer = document.getElementById('tabla-resultados');
+    const roundResult = document.getElementById('resultado-ronda');
+    const roundTable = document.getElementById('tabla-ronda');
     const messageEnd = document.getElementById('message-end');
     const endTitle = document.getElementById('end-title');
     const endMsg = document.getElementById('end-msg');
+    const modalButton = document.getElementById('modal-button');
 
-    const totalPairs = 4;
-    const flagsBase = [
-      'bandera1.png', 'bandera2.png', 'bandera3.png', 'bandera4.png'
-    ];
+    const totalPairs = 8;
+    const flagsBase = ['bandera1.png','bandera2.png','bandera3.png','bandera4.png','bandera5.png','bandera6.png','bandera7.png','bandera8.png'];
 
-    let attempts = 0;
-    let pairsFound = 0;
-    let firstCard = null;
-    let secondCard = null;
-    let lockBoard = false;
-    let gameStarted = false;
-    let gameFinished = false;
-    let timerId = null;
-    let startTime = 0;
-    let elapsedSeconds = 0;
-    let currentTeam = '';
-    let scores = [];
+    let activeTeam = 0;
+    let attempts = 0, pairsFound = 0, elapsedSeconds = 0, startTime = 0;
+    let firstCard = null, secondCard = null, lockBoard = false, gameStarted = false, gameFinished = false, timerId = null;
+    let resultados = [];
 
-    function shuffle(items) {
-      return [...items].sort(() => Math.random() - 0.5);
-    }
-
-    function formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const secs = (seconds % 60).toString().padStart(2, '0');
-      return `${minutes}:${secs}`;
-    }
-
-    function updateTimer() {
-      elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      const timerText = document.getElementById('cronometro');
-      if (timerText) timerText.textContent = formatTime(elapsedSeconds);
-    }
-
-    function createTimerCell() {
-      const timerCell = document.createElement('div');
-      timerCell.className = 'timer-cell';
-      timerCell.innerHTML = '<span>Tiempo</span><span id="cronometro">00:00</span>';
-      return timerCell;
-    }
+    function shuffle(items) { return [...items].sort(() => Math.random() - 0.5); }
+    function formatTime(seconds) { return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`; }
+    function updateTimer() { elapsedSeconds = Math.floor((Date.now()-startTime)/1000); timerText.textContent = `Tiempo: ${formatTime(elapsedSeconds)}`; }
 
     function createCard(img) {
-      const card = document.createElement('div');
-      card.classList.add('carta');
-      card.dataset.flag = img;
-
-      const frontImg = document.createElement('img');
-      frontImg.classList.add('frente');
-      frontImg.src = img;
-      frontImg.alt = 'Bandera';
-
-      const backImg = document.createElement('img');
-      backImg.classList.add('atras');
-      backImg.src = 'reverso.png';
-      backImg.alt = 'Reverso de la carta';
-
-      card.append(frontImg, backImg);
-      card.addEventListener('click', flipCard);
-      return card;
+      const card = document.createElement('div'); card.className = 'carta'; card.dataset.flag = img;
+      const front = document.createElement('img'); front.className = 'frente'; front.src = img; front.alt = 'Bandera';
+      const back = document.createElement('img'); back.className = 'atras'; back.src = 'reverso.png'; back.alt = 'Reverso de carta';
+      card.append(front, back); card.addEventListener('click', flipCard); return card;
     }
 
     function renderBoard() {
       board.innerHTML = '';
-      const flags = shuffle([...flagsBase, ...flagsBase]);
-
-      flags.forEach((flag, index) => {
-        board.appendChild(createCard(flag));
-        // Inserta el cronómetro en el centro para completar visualmente la grilla 3 x 3.
-        if (index === 3) board.appendChild(createTimerCell());
-      });
+      shuffle([...flagsBase, ...flagsBase]).forEach(flag => board.appendChild(createCard(flag)));
     }
 
-    function resetRound() {
-      attempts = 0;
-      pairsFound = 0;
-      firstCard = null;
-      secondCard = null;
-      lockBoard = false;
-      gameFinished = false;
-      elapsedSeconds = 0;
-      attemptsText.textContent = 'Intentos: 0';
-      pairsText.textContent = `Aciertos: 0 / ${totalPairs}`;
+    function resetGame() {
+      clearInterval(timerId);
+      attempts = 0; pairsFound = 0; elapsedSeconds = 0; firstCard = null; secondCard = null; lockBoard = false; gameStarted = false; gameFinished = false;
+      attemptsText.textContent = 'Intentos: 0'; pairsText.textContent = `Aciertos: 0 / ${totalPairs}`; timerText.textContent = 'Tiempo: 00:00';
       renderBoard();
     }
 
-    function startGame() {
-      const proposedName = teamInput.value.trim();
-      currentTeam = proposedName || 'Equipo sin nombre';
-      resetRound();
+    function startTurn() {
+      resetGame();
       gameStarted = true;
       startTime = Date.now();
       timerId = setInterval(updateTimer, 1000);
       updateTimer();
-
-      teamText.textContent = `Equipo: ${currentTeam}`;
-      startButton.disabled = true;
-      teamInput.disabled = true;
-      finishButton.disabled = false;
+      const teamName = `Equipo ${activeTeam + 1}`;
+      teamText.textContent = `Turno: ${teamName}`;
+      roundStatus.textContent = `Está jugando ${teamName}.`;
+      principalButton.disabled = true;
     }
 
     function flipCard() {
-      if (!gameStarted || gameFinished || lockBoard) return;
-      if (this === firstCard || this.classList.contains('encontrada')) return;
-
+      if (!gameStarted || gameFinished || lockBoard || this === firstCard || this.classList.contains('encontrada')) return;
       this.classList.add('volteada');
-
-      if (!firstCard) {
-        firstCard = this;
-        return;
-      }
-
-      secondCard = this;
-      attempts++;
-      attemptsText.textContent = `Intentos: ${attempts}`;
-      checkMatch();
-    }
-
-    function checkMatch() {
-      const isMatch = firstCard.dataset.flag === secondCard.dataset.flag;
-      isMatch ? disableCards() : unflipCards();
+      if (!firstCard) { firstCard = this; return; }
+      secondCard = this; attempts++; attemptsText.textContent = `Intentos: ${attempts}`;
+      const match = firstCard.dataset.flag === secondCard.dataset.flag;
+      match ? disableCards() : unflipCards();
     }
 
     function disableCards() {
-      firstCard.classList.add('encontrada');
-      secondCard.classList.add('encontrada');
-      pairsFound++;
+      firstCard.classList.add('encontrada'); secondCard.classList.add('encontrada'); pairsFound++;
       pairsText.textContent = `Aciertos: ${pairsFound} / ${totalPairs}`;
       resetSelection();
-
-      if (pairsFound === totalPairs) {
-        setTimeout(() => endGame(true), 350);
-      }
+      if (pairsFound === totalPairs) setTimeout(endTurn, 350);
     }
 
     function unflipCards() {
       lockBoard = true;
-      setTimeout(() => {
-        firstCard.classList.remove('volteada');
-        secondCard.classList.remove('volteada');
-        resetSelection();
-      }, 850);
+      setTimeout(() => { firstCard.classList.remove('volteada'); secondCard.classList.remove('volteada'); resetSelection(); }, 850);
     }
+    function resetSelection() { firstCard = null; secondCard = null; lockBoard = false; }
 
-    function resetSelection() {
-      firstCard = null;
-      secondCard = null;
-      lockBoard = false;
-    }
-
-    function registerScore() {
-      scores.push({
-        team: currentTeam,
-        hits: pairsFound,
-        time: elapsedSeconds,
-        attempts
-      });
-      scores.sort((a, b) => b.hits - a.hits || a.time - b.time || a.attempts - b.attempts);
-      renderScores();
-    }
-
-    function renderScores() {
-      if (!scores.length) {
-        resultsContainer.innerHTML = '<p class="ranking-vacio">Todavía no hay resultados registrados.</p>';
-        return;
-      }
-
-      resultsContainer.innerHTML = `
-        <table>
-          <thead>
-            <tr><th>#</th><th>Equipo</th><th>Aciertos</th><th>Tiempo</th></tr>
-          </thead>
-          <tbody>
-            ${scores.map((score, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${score.team}</td>
-                <td>${score.hits}/${totalPairs}</td>
-                <td>${formatTime(score.time)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-    }
-
-    function endGame(completed) {
+    function endTurn() {
       if (!gameStarted || gameFinished) return;
+      gameFinished = true; gameStarted = false; clearInterval(timerId); updateTimer();
+      resultados[activeTeam] = { equipo:`Equipo ${activeTeam + 1}`, aciertos:pairsFound, tiempo:elapsedSeconds };
+      if (activeTeam === 0) {
+        endTitle.textContent = '¡Turno del Equipo 1 finalizado!';
+        endMsg.innerHTML = `Consiguió <strong>${pairsFound}/${totalPairs} aciertos</strong> en <strong>${formatTime(elapsedSeconds)}</strong>.<br>Ahora se reiniciará el juego para el Equipo 2.`;
+        modalButton.textContent = 'Comenzar Equipo 2';
+        modalButton.onclick = () => { messageEnd.style.display = 'none'; activeTeam = 1; principalButton.disabled = false; principalButton.textContent = 'Comenzar: Equipo 2'; roundStatus.textContent = 'Preparados para el turno del Equipo 2.'; resetGame(); };
+        messageEnd.style.display = 'block';
+      } else {
+        showRoundWinner();
+      }
+    }
 
-      gameFinished = true;
-      gameStarted = false;
-      clearInterval(timerId);
-      updateTimer();
-      finishButton.disabled = true;
-      registerScore();
-
-      endTitle.textContent = completed ? '¡Turno completo!' : '¡Turno finalizado!';
-      endMsg.innerHTML = `${currentTeam} logró <strong>${pairsFound}/${totalPairs} aciertos</strong> en <strong>${formatTime(elapsedSeconds)}</strong>.<br>La tabla ordena primero por aciertos y, en caso de empate, por menor tiempo.`;
+    function showRoundWinner() {
+      const [one, two] = resultados;
+      let title, message;
+      if (one.aciertos > two.aciertos || (one.aciertos === two.aciertos && one.tiempo < two.tiempo)) {
+        title = '¡Felicitaciones, Equipo 1!'; message = 'Ganó esta ronda.';
+      } else if (two.aciertos > one.aciertos || (one.aciertos === two.aciertos && two.tiempo < one.tiempo)) {
+        title = '¡Felicitaciones, Equipo 2!'; message = 'Ganó esta ronda.';
+      } else {
+        title = '¡Empate!'; message = 'Ambos equipos lograron los mismos aciertos en el mismo tiempo.';
+      }
+      roundTable.innerHTML = resultados.map(r => `<tr><td>${r.equipo}</td><td>${r.aciertos}/${totalPairs}</td><td>${formatTime(r.tiempo)}</td></tr>`).join('');
+      roundResult.style.display = 'block';
+      endTitle.textContent = title;
+      endMsg.innerHTML = `${message}<br><br><strong>Equipo 1:</strong> ${one.aciertos} aciertos · ${formatTime(one.tiempo)}<br><strong>Equipo 2:</strong> ${two.aciertos} aciertos · ${formatTime(two.tiempo)}`;
+      modalButton.textContent = 'Iniciar nueva ronda';
+      modalButton.onclick = newRound;
       messageEnd.style.display = 'block';
     }
 
-    function finishTurn() {
-      if (!gameStarted || gameFinished || lockBoard) return;
-      endGame(false);
+    function newRound() {
+      messageEnd.style.display = 'none'; roundResult.style.display = 'none'; resultados = []; activeTeam = 0;
+      teamText.textContent = 'Turno: —'; roundStatus.textContent = 'Preparados para comenzar una nueva ronda.';
+      principalButton.disabled = false; principalButton.textContent = 'Comenzar: Equipo 1'; resetGame();
     }
 
-    function nuevoEquipo() {
-      messageEnd.style.display = 'none';
-      clearInterval(timerId);
-      gameStarted = false;
-      gameFinished = false;
-      startButton.disabled = false;
-      teamInput.disabled = false;
-      teamInput.value = '';
-      teamInput.focus();
-      teamText.textContent = 'Equipo: —';
-      resetRound();
-    }
-
-    startButton.addEventListener('click', startGame);
-    finishButton.addEventListener('click', finishTurn);
-    teamInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !startButton.disabled) startGame();
-    });
-
-    renderBoard();
+    principalButton.addEventListener('click', startTurn);
+    resetGame();
   </script>
 </body>
 </html>
+
