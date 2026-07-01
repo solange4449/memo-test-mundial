@@ -55,7 +55,7 @@
 </head>
 <body>
   <h1>Memo Test Mundial - B.A.P.A.</h1>
-  <p class="subtitulo">Ronda de dos equipos: gana quien consiga más aciertos; si empatan, gana quien lo logra en menor tiempo.</p>
+  <p class="subtitulo">Ronda de dos equipos: cada equipo tiene hasta 10 intentos. Gana quien consiga más aciertos; si empatan, gana quien lo logra en menor tiempo.</p>
 
   <div class="panel">
     <strong id="estado-ronda">Preparados para comenzar la ronda.</strong>
@@ -67,7 +67,7 @@
   <div id="info-game">
     <div id="equipo-actual">Turno: —</div>
     <div id="cronometro">Tiempo: 00:00</div>
-    <div id="intentos">Intentos: 0</div>
+    <div id="intentos">Intentos: 0 / 10</div>
     <div id="pares">Aciertos: 0 / 8</div>
   </div>
 
@@ -101,6 +101,7 @@
     const modalButton = document.getElementById('modal-button');
 
     const totalPairs = 8;
+    const maxAttempts = 10;
     const flagsBase = ['bandera1.png','bandera2.png','bandera3.png','bandera4.png','bandera5.png','bandera6.png','bandera7.png','bandera8.png'];
 
     let activeTeam = 0;
@@ -127,7 +128,7 @@
     function resetGame() {
       clearInterval(timerId);
       attempts = 0; pairsFound = 0; elapsedSeconds = 0; firstCard = null; secondCard = null; lockBoard = false; gameStarted = false; gameFinished = false;
-      attemptsText.textContent = 'Intentos: 0'; pairsText.textContent = `Aciertos: 0 / ${totalPairs}`; timerText.textContent = 'Tiempo: 00:00';
+      attemptsText.textContent = `Intentos: 0 / ${maxAttempts}`; pairsText.textContent = `Aciertos: 0 / ${totalPairs}`; timerText.textContent = 'Tiempo: 00:00';
       renderBoard();
     }
 
@@ -147,21 +148,34 @@
       if (!gameStarted || gameFinished || lockBoard || this === firstCard || this.classList.contains('encontrada')) return;
       this.classList.add('volteada');
       if (!firstCard) { firstCard = this; return; }
-      secondCard = this; attempts++; attemptsText.textContent = `Intentos: ${attempts}`;
+      secondCard = this;
+      attempts++;
+      attemptsText.textContent = `Intentos: ${attempts} / ${maxAttempts}`;
       const match = firstCard.dataset.flag === secondCard.dataset.flag;
       match ? disableCards() : unflipCards();
     }
 
     function disableCards() {
-      firstCard.classList.add('encontrada'); secondCard.classList.add('encontrada'); pairsFound++;
+      firstCard.classList.add('encontrada');
+      secondCard.classList.add('encontrada');
+      pairsFound++;
       pairsText.textContent = `Aciertos: ${pairsFound} / ${totalPairs}`;
       resetSelection();
-      if (pairsFound === totalPairs) setTimeout(endTurn, 350);
+
+      if (pairsFound === totalPairs || attempts >= maxAttempts) {
+        lockBoard = true;
+        setTimeout(endTurn, 450);
+      }
     }
 
     function unflipCards() {
       lockBoard = true;
-      setTimeout(() => { firstCard.classList.remove('volteada'); secondCard.classList.remove('volteada'); resetSelection(); }, 850);
+      setTimeout(() => {
+        firstCard.classList.remove('volteada');
+        secondCard.classList.remove('volteada');
+        resetSelection();
+        if (attempts >= maxAttempts) endTurn();
+      }, 850);
     }
     function resetSelection() { firstCard = null; secondCard = null; lockBoard = false; }
 
@@ -210,4 +224,5 @@
   </script>
 </body>
 </html>
+
 
