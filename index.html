@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memo Test Mundial - B.A.P.A.</title>
+  <style>
+    :root {
+      --azul: #2c3e50;
+      --dorado: #f1c40f;
+      --naranja: #e67e22;
+      --blanco: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: var(--blanco);
+      background: var(--azul);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(2rem, 5vw, 3rem);
+      text-shadow: 2px 2px 4px rgba(0,0,0,.5);
+    }
+
+    .panel-equipo, .ranking {
+      width: min(100%, 500px);
+      padding: 14px;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.12);
+      box-shadow: 0 4px 15px rgba(0,0,0,.25);
+    }
+
+    .panel-equipo {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input, button {
+      font: inherit;
+      border-radius: 7px;
+      border: none;
+    }
+
+    input {
+      width: min(100%, 230px);
+      padding: 10px 12px;
+    }
+
+    button {
+      padding: 10px 16px;
+      cursor: pointer;
+      color: white;
+      background: var(--naranja);
+      transition: background .2s, transform .2s;
+    }
+
+    button:hover { background: #d35400; }
+    button:active { transform: scale(.97); }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+
+    .tablero {
+      display: grid;
+      grid-template-columns: repeat(3, min(120px, 27vw));
+      gap: 12px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.10);
+      box-shadow: 0 4px 15px rgba(0,0,0,.3);
+    }
+
+    .carta, .timer-cell {
+      width: min(120px, 27vw);
+      aspect-ratio: 1;
+      border-radius: 9px;
+    }
+
+    .carta {
+      position: relative;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform .3s;
+    }
+
+    .carta:active { transform: scale(.95); }
+    .carta.volteada, .carta.encontrada { transform: rotateY(180deg); }
+    .carta.encontrada { cursor: default; }
+
+    .frente, .atras {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--blanco);
+      border-radius: 9px;
+      object-fit: cover;
+      box-shadow: 0 2px 5px rgba(0,0,0,.25);
+      backface-visibility: hidden;
+    }
+
+    .frente { transform: rotateY(180deg); }
+    .atras { background: var(--dorado); }
+
+    .timer-cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      color: #2c3e50;
+      background: var(--dorado);
+      border: 2px solid var(--blanco);
+      box-shadow: 0 2px 5px rgba(0,0,0,.25);
+      font-weight: bold;
+    }
+
+    .timer-cell span:first-child { font-size: .78rem; text-transform: uppercase; }
+    #cronometro { margin-top: 5px; font-size: clamp(1.35rem, 5vw, 2rem); }
+
+    #info-game {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 28px;
+      margin: 18px 0 12px;
+      font-size: 1.15rem;
+    }
+
+    #info-game div { font-weight: bold; }
+
+    #finalizar-turno { margin-bottom: 18px; }
+
+    .ranking h2 { margin: 0 0 10px; font-size: 1.2rem; }
+    .ranking table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+    .ranking th, .ranking td { padding: 7px 5px; border-bottom: 1px solid rgba(255,255,255,.22); }
+    .ranking th { color: #f9dc4a; }
+    .ranking tbody tr:last-child td { border-bottom: 0; }
+    .ranking-vacio { margin: 0; opacity: .8; }
+
+    .message-box {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 50%;
+      left: 50%;
+      width: min(90%, 430px);
+      transform: translate(-50%, -50%);
+      padding: 30px;
+      border-radius: 15px;
+      color: #1f2d3a;
+      background: white;
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    }
+
+    .message-box h2 { margin: 0 0 10px; font-size: 2rem; }
+    .message-box p { margin: 0; line-height: 1.5; }
+    .message-box button { margin-top: 20px; }
+
+    @media (max-width: 420px) {
+      body { padding: 15px; }
+      .tablero { gap: 8px; padding: 10px; }
+      #info-game { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Memo Test Mundial - B.A.P.A.</h1>
+
+  <div class="panel-equipo">
+    <label for="nombre-equipo">Equipo:</label>
+    <input id="nombre-equipo" type="text" maxlength="30" placeholder="Ej.: Los Campeones">
+    <button id="iniciar-juego" type="button">Iniciar turno</button>
+  </div>
+
+  <div class="tablero" id="game-board" aria-label="Tablero del juego"></div>
+
+  <div id="info-game">
+    <div id="intentos">Intentos: 0</div>
+    <div id="pares">Aciertos: 0 / 4</div>
+    <div id="equipo-actual">Equipo: —</div>
+  </div>
+
+  <button id="finalizar-turno" type="button" disabled>Finalizar turno</button>
+
+  <section class="ranking" aria-live="polite">
+    <h2>Tabla de equipos</h2>
+    <div id="tabla-resultados"><p class="ranking-vacio">Todavía no hay resultados registrados.</p></div>
+  </section>
+
+  <div class="message-box" id="message-end" role="dialog" aria-modal="true">
+    <h2 id="end-title">¡Turno finalizado!</h2>
+    <p id="end-msg"></p>
+    <button type="button" onclick="nuevoEquipo()">Juega otro equipo</button>
+  </div>
+
+  <script>
+    const board = document.getElementById('game-board');
+    const attemptsText = document.getElementById('intentos');
+    const pairsText = document.getElementById('pares');
+    const teamText = document.getElementById('equipo-actual');
+    const teamInput = document.getElementById('nombre-equipo');
+    const startButton = document.getElementById('iniciar-juego');
+    const finishButton = document.getElementById('finalizar-turno');
+    const resultsContainer = document.getElementById('tabla-resultados');
+    const messageEnd = document.getElementById('message-end');
+    const endTitle = document.getElementById('end-title');
+    const endMsg = document.getElementById('end-msg');
+
+    const totalPairs = 4;
+    const flagsBase = [
+      'bandera1.png', 'bandera2.png', 'bandera3.png', 'bandera4.png'
+    ];
+
+    let attempts = 0;
+    let pairsFound = 0;
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let gameStarted = false;
+    let gameFinished = false;
+    let timerId = null;
+    let startTime = 0;
+    let elapsedSeconds = 0;
+    let currentTeam = '';
+    let scores = [];
+
+    function shuffle(items) {
+      return [...items].sort(() => Math.random() - 0.5);
+    }
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = (seconds % 60).toString().padStart(2, '0');
+      return `${minutes}:${secs}`;
+    }
+
+    function updateTimer() {
+      elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      const timerText = document.getElementById('cronometro');
+      if (timerText) timerText.textContent = formatTime(elapsedSeconds);
+    }
+
+    function createTimerCell() {
+      const timerCell = document.createElement('div');
+      timerCell.className = 'timer-cell';
+      timerCell.innerHTML = '<span>Tiempo</span><span id="cronometro">00:00</span>';
+      return timerCell;
+    }
+
+    function createCard(img) {
+      const card = document.createElement('div');
+      card.classList.add('carta');
+      card.dataset.flag = img;
+
+      const frontImg = document.createElement('img');
+      frontImg.classList.add('frente');
+      frontImg.src = img;
+      frontImg.alt = 'Bandera';
+
+      const backImg = document.createElement('img');
+      backImg.classList.add('atras');
+      backImg.src = 'reverso.png';
+      backImg.alt = 'Reverso de la carta';
+
+      card.append(frontImg, backImg);
+      card.addEventListener('click', flipCard);
+      return card;
+    }
+
+    function renderBoard() {
+      board.innerHTML = '';
+      const flags = shuffle([...flagsBase, ...flagsBase]);
+
+      flags.forEach((flag, index) => {
+        board.appendChild(createCard(flag));
+        // Inserta el cronómetro en el centro para completar visualmente la grilla 3 x 3.
+        if (index === 3) board.appendChild(createTimerCell());
+      });
+    }
+
+    function resetRound() {
+      attempts = 0;
+      pairsFound = 0;
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      gameFinished = false;
+      elapsedSeconds = 0;
+      attemptsText.textContent = 'Intentos: 0';
+      pairsText.textContent = `Aciertos: 0 / ${totalPairs}`;
+      renderBoard();
+    }
+
+    function startGame() {
+      const proposedName = teamInput.value.trim();
+      currentTeam = proposedName || 'Equipo sin nombre';
+      resetRound();
+      gameStarted = true;
+      startTime = Date.now();
+      timerId = setInterval(updateTimer, 1000);
+      updateTimer();
+
+      teamText.textContent = `Equipo: ${currentTeam}`;
+      startButton.disabled = true;
+      teamInput.disabled = true;
+      finishButton.disabled = false;
+    }
+
+    function flipCard() {
+      if (!gameStarted || gameFinished || lockBoard) return;
+      if (this === firstCard || this.classList.contains('encontrada')) return;
+
+      this.classList.add('volteada');
+
+      if (!firstCard) {
+        firstCard = this;
+        return;
+      }
+
+      secondCard = this;
+      attempts++;
+      attemptsText.textContent = `Intentos: ${attempts}`;
+      checkMatch();
+    }
+
+    function checkMatch() {
+      const isMatch = firstCard.dataset.flag === secondCard.dataset.flag;
+      isMatch ? disableCards() : unflipCards();
+    }
+
+    function disableCards() {
+      firstCard.classList.add('encontrada');
+      secondCard.classList.add('encontrada');
+      pairsFound++;
+      pairsText.textContent = `Aciertos: ${pairsFound} / ${totalPairs}`;
+      resetSelection();
+
+      if (pairsFound === totalPairs) {
+        setTimeout(() => endGame(true), 350);
+      }
+    }
+
+    function unflipCards() {
+      lockBoard = true;
+      setTimeout(() => {
+        firstCard.classList.remove('volteada');
+        secondCard.classList.remove('volteada');
+        resetSelection();
+      }, 850);
+    }
+
+    function resetSelection() {
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+    }
+
+    function registerScore() {
+      scores.push({
+        team: currentTeam,
+        hits: pairsFound,
+        time: elapsedSeconds,
+        attempts
+      });
+      scores.sort((a, b) => b.hits - a.hits || a.time - b.time || a.attempts - b.attempts);
+      renderScores();
+    }
+
+    function renderScores() {
+      if (!scores.length) {
+        resultsContainer.innerHTML = '<p class="ranking-vacio">Todavía no hay resultados registrados.</p>';
+        return;
+      }
+
+      resultsContainer.innerHTML = `
+        <table>
+          <thead>
+            <tr><th>#</th><th>Equipo</th><th>Aciertos</th><th>Tiempo</th></tr>
+          </thead>
+          <tbody>
+            ${scores.map((score, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${score.team}</td>
+                <td>${score.hits}/${totalPairs}</td>
+                <td>${formatTime(score.time)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function endGame(completed) {
+      if (!gameStarted || gameFinished) return;
+
+      gameFinished = true;
+      gameStarted = false;
+      clearInterval(timerId);
+      updateTimer();
+      finishButton.disabled = true;
+      registerScore();
+
+      endTitle.textContent = completed ? '¡Turno completo!' : '¡Turno finalizado!';
+      endMsg.innerHTML = `${currentTeam} logró <strong>${pairsFound}/${totalPairs} aciertos</strong> en <strong>${formatTime(elapsedSeconds)}</strong>.<br>La tabla ordena primero por aciertos y, en caso de empate, por menor tiempo.`;
+      messageEnd.style.display = 'block';
+    }
+
+    function finishTurn() {
+      if (!gameStarted || gameFinished || lockBoard) return;
+      endGame(false);
+    }
+
+    function nuevoEquipo() {
+      messageEnd.style.display = 'none';
+      clearInterval(timerId);
+      gameStarted = false;
+      gameFinished = false;
+      startButton.disabled = false;
+      teamInput.disabled = false;
+      teamInput.value = '';
+      teamInput.focus();
+      teamText.textContent = 'Equipo: —';
+      resetRound();
+    }
+
+    startButton.addEventListener('click', startGame);
+    finishButton.addEventListener('click', finishTurn);
+    teamInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !startButton.disabled) startGame();
+    });
+
+    renderBoard();
+  </script>
+</body>
+</html>
